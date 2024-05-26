@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+  <html>
+    <head>
+      <title>ลงทะเบียน</title>
+      <!--Import Google Icon Font-->
+      <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+      <!-- Compiled and minified CSS -->
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <!--Let browser know website is optimized for mobile-->
+      <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    </head>
+
+    <body>
+      <div id="login-page" class="row">
+        <form class="login-form light-green" onsubmit="return submitRegister(event)">
+        <div class="col s12">
+
+          <h6 class="card-panel white-text text-darken-3  indigo darken-4">
+            <i class="material-icons prefix">border_color</i>
+            ลงทะเบียนก่อนใช้บริการ 'คุณระเบียบ'
+          </h6>
+
+          <div class="row valign-wrapper">
+              <div class="col s12 center">
+                <img id="imgprofile" width="80" class="center circle responsive-img">
+                <div id="profile" class="center">..</div>
+              </div>
+          </div>
+
+          <div class="row">
+            <div class="input-field col s12">
+              <i class="material-icons prefix">account_box</i>
+              <input id="username" type="number" class="validate" required="" aria-required="true">
+              <label for="username"</label>เลขประจำตัวพนักงาน</label>
+            </div>
+
+            <div class="input-field col s12">
+                <i class="material-icons prefix">lock_outline</i>
+                <input id="password" type="password" class="validate" required="" aria-required="true">
+                <label for="password">รหัสผ่าน Email EGAT</label>
+                <span class="helper-text" data-error="ป้อนรหัสผ่านของอีเมล์ EGAT" data-success="ผ่าน"></span>
+              </div>
+            </div>
+
+            <div class="col s12">
+                ท่านยินยอมให้ "คุณระเบียบ" ทำการเก็บข้อมูล LINE ID และประวัติการค้นหาของท่าน
+                เพื่อกำหนดสิทธิในการเข้าถึงข้อมูลและจดจำท่านสำหรับการเข้าใช้งานครั้งถัดไป
+                รวมถึงการนำข้อมูลมาวิเคราะห์เพื่อพัฒนาระบบสู่ประสบการณ์การใช้งานที่ดีขึ้น
+                ทั้งนี้ "คุณระเบียบ" จะทำการลบข้อมูลของท่านออกทุก 3 เดือน
+                เมื่อข้อมูลถูกลบแล้วจะต้องทำการลงทะเบียนใหม่เพื่อเข้าใช้งาน
+                หากท่านต้องการให้ลบข้อมูลทันทีสามารถแจ้งได้ที่ nutthawadee.j@egat.co.th <br><br>
+            </div>
+
+            <div style="text-align:center;margin:30px;">
+              <label>
+                <input class="with-gap"  name="accept" type="radio" checked />
+                <span>ยอมรับ</span>
+              </label>
+
+              <label>
+                <input class="with-gap"  name="accept" type="radio"/>
+                <span>ไม่ยอมรับ</span>
+              </label>
+            </div>
+          </div>
+
+
+          <button class="col s10 offset-s1 btn-large waves-effect waves-light amber darken-4 white-text" type="submit" name="action">
+            <i class="material-icons right">send</i>
+            ลงทะเบียน
+          </button>
+
+          </form>
+
+      </div>
+
+
+
+    </div>
+
+    <!-- Compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script src="https://static.line-scdn.net/liff/edge/2.1/liff.js"></script>
+    <script>
+      
+      
+      const webhookUrl = "https://893c-58-11-3-60.ngrok-free.app/"  //<-- webhook
+      const liffId = "1654109634-mOJGk7bV" //<-- Liff Id
+
+      window.onload = function(e) {
+        initializeLiff(liffId);
+      };
+
+      function initializeLiff(liffId) {
+        liff
+          .init({ liffId })
+          .then(async () => {
+            if (liff.isLoggedIn()) {
+              liff.getProfile().then(profile => {
+                console.log(profile)
+                console.log('token',liff.getDecodedIDToken())
+                document.getElementById("profile").innerHTML = profile.displayName
+                document.getElementById("imgprofile").src = profile.pictureUrl
+              })
+              //initializeApp();
+            }
+            else {
+              liff.login()
+            }
+          })
+          .catch(err => {
+            console.log(err)
+          })
+      }
+
+      // Rest api function
+      async function requestAPI( url='', data={} ) {
+        const response = await fetch(
+          url,
+          {
+            method: 'POST', // *GET, POST, PUT, DELETE, etc.
+            headers: {
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data) // body data type must match "Content-Type" header
+        });
+
+        return response.json(); // parses JSON response into native JavaScript objects
+      }
+
+      // submit form
+      function submitRegister (e) {
+        e.preventDefault();
+        if (document.getElementsByName("accept")[1].checked) {
+          liff.sendMessages([
+            {
+              type: 'text',
+              text: '😢 คุณไม่ยอมรับเงื่อนไขการลงทะเบียน!'   // say something more..
+            }
+          ])
+          .then(() => {
+            liff.closeWindow();
+          })
+        }
+        else {
+        // form data
+          liff.getProfile().then(profile => {
+            userId = profile.userId;
+            displayName = profile.displayName
+            idToken = liff.getDecodedIDToken()
+            let data = {
+              userId,
+              displayName,
+              idToken,
+              action : 'register',
+              username : document.getElementById("username").value,
+              password : document.getElementById("password").value,
+            }
+
+
+            requestAPI(webhookUrl + "register", data)
+              .then(result => {
+                console.log(result)
+                if (result == true) {
+                  M.toast({html: 'ลงทะเบียนเรียบร้อยค่ะ'})
+                  if (!liff.isInClient()) {
+                    alert('This button is unavailable as LIFF is currently being opened in an external browser.');
+                  }
+                  else {
+                    liff.sendMessages([
+                      {
+                        type: 'text',
+                        text: 'คุณได้ลงทะเบียนเรียบร้อยแล้ว'   // say something more..
+                      }
+                    ])
+                    .then(() => {
+                      liff.closeWindow();
+                    })
+                    .catch((err) => {
+                      console.log('error', err);
+                      //liff.closeWindow();
+                      M.toast({html: 'error ลองใหม่ค่ะ'})
+                    });
+                  }
+                }
+                else {
+                   M.toast({html: 'รหัสผ่านไม่ถูกต้อง ลองใหม่ค่ะ'})
+                }
+              })
+          })
+          .catch(err => console.error(err));
+        }
+      }
+    
+    </script>
+  </body>
+</html>
