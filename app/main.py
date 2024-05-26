@@ -103,12 +103,15 @@ async def handle_register(request: Request):
 
 def isEGATUser(username,password):
     print (username,password)
-    wsdl = 'http://webservices.egat.co.th/authentication/au_provi.php?wsdl'
-    client = zeep.Client(wsdl=wsdl)
-    result = client.service.validate_user(username, password)
-    print('EGAT User: ', result)
-    
-    return result
+    try: 
+        wsdl = 'http://webservices.egat.co.th/authentication/au_provi.php?wsdl'
+        client = zeep.Client(wsdl=wsdl)
+        result = client.service.validate_user(username, password)
+        print('EGAT User: ', result)
+        return result
+    except:
+        return False
+
 
 def addUser(data):
     con = sqlite3.connect("database.db")
