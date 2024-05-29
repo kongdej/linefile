@@ -11,18 +11,13 @@ from fastapi import Request, FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from linebot.v3.webhook import WebhookParser
 from linebot.v3.messaging import (
-    AsyncApiClient,
-    AsyncMessagingApi,
-    Configuration,
-    ReplyMessageRequest,
-    TextMessage,
+    AsyncApiClient, AsyncMessagingApi, Configuration, ReplyMessageRequest, TextMessage,
 )
 from linebot.v3.exceptions import (
     InvalidSignatureError
 )
 from linebot.v3.webhooks import (
-    MessageEvent,
-    TextMessageContent,
+    MessageEvent, TextMessageContent,
 )
 
 # get channel_secret and channel_access_token from your environment variable
@@ -71,23 +66,24 @@ async def handle_callback(request: Request):
         if event.message.type == 'text':
             if event.message.text == 'register':
                 url= host_url + '/liff'
-                await line_bot_api.reply_message(
-                    ReplyMessageRequest(
-                        reply_token=event.reply_token,
-                        messages=[TextMessage(text=url)]
-                    )
-                )
+                await sendText(event, url) 
+            elif event.message.text == '!menu':
+                await sendText(event, 'menu menu') 
             else:
-                await line_bot_api.reply_message(
-                    ReplyMessageRequest(
-                        reply_token=event.reply_token,
-                        messages=[TextMessage(text=event.message.text)]
-                    )
-                )
-        
-
+                await sendText(event, event.message.text)
+               
     return 'OK'
 
+#functions 
+async def sendText(event, text):
+    await line_bot_api.reply_message(
+        ReplyMessageRequest(
+            reply_token=event.reply_token,
+            messages=[TextMessage(text=text)]
+        )
+    )
+
+#backend api
 @app.post("/register")
 async def handle_register(request: Request):
     body = await request.body()
