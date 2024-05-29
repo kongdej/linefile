@@ -11,13 +11,13 @@ from fastapi import Request, FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from linebot.v3.webhook import WebhookParser
 from linebot.v3.messaging import (
-    AsyncApiClient, AsyncMessagingApi, Configuration, ReplyMessageRequest, TextMessage,
+    AsyncApiClient, AsyncMessagingApi, Configuration, ReplyMessageRequest, TextMessage, FlexMessage, FlexContainer,
 )
 from linebot.v3.exceptions import (
     InvalidSignatureError
 )
 from linebot.v3.webhooks import (
-    MessageEvent, TextMessageContent,
+    MessageEvent, TextMessageContent
 )
 
 # get channel_secret and channel_access_token from your environment variable
@@ -41,6 +41,7 @@ app = FastAPI()
 async_api_client = AsyncApiClient(configuration)
 line_bot_api = AsyncMessagingApi(async_api_client)
 parser = WebhookParser(channel_secret)
+database = "database.db"
 
 app.mount("/liff", StaticFiles(directory="liff", html = True), name="liff")
 
@@ -70,8 +71,105 @@ async def handle_callback(request: Request):
             elif event.message.text == '!menu':
                 await sendText(event, 'menu menu') 
             else:
-                await sendText(event, event.message.text)
-               
+                
+                text  = '%'+event.message.text+'%'
+                results = []
+                bubble_string = """
+                    {
+                        "type": "bubble",
+                        "size": "giga",
+                        "body": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "contents": [
+                            {
+                                "type": "text",
+                                "text": "Search",
+                                "weight": "bold",
+                                "color": "#1DB446",
+                                "size": "sm"
+                            },
+                            {
+                                "type": "text",
+                                "text": "'รถ'",
+                                "weight": "bold",
+                                "size": "md",
+                                "margin": "md"
+                            },
+                            {
+                                "type": "separator",
+                                "margin": "md"
+                            },
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "margin": "md",
+                                "spacing": "xs",
+                                "contents": [
+                                {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "contents": [
+                """
+                try:
+                    with sqlite3.connect(database) as conn:
+                        cur = conn.cursor()
+                        cur.execute('SELECT * FROM documents WHERE title like ? OR content like ? LIMIT 0,20 ',(text,text))
+                        rows = cur.fetchall()
+                        for row in rows:
+                            print(row[1])
+                            linkPdfUrl = 'https://www.google.com'
+                            results.append('{"type": "text","text": "'+row[1]+'","size": "md","color": "#555555","flex": 0, "action": { "type": "uri", "label": "action", "uri": "' + linkPdfUrl + '"}}')
+
+                        bubble_string += ','.join(results)
+                        bubble_string += """
+                                            ]
+                                        }
+                                        ]
+                                    },
+                                    {
+                                        "type": "separator",
+                                        "margin": "md"
+                                    },
+                                    {
+                                        "type": "box",
+                                        "layout": "horizontal",
+                                        "margin": "md",
+                                        "contents": [
+                                        {
+                                            "type": "text",
+                                            "text": "Found",
+                                            "size": "xs",
+                                            "color": "#aaaaaa",
+                                            "flex": 0
+                                        },
+                                        {
+                                            "type": "text",
+                                """
+                        bubble_string += '"text": "'+ str(len(rows)) +'",'
+                        bubble_string += """          
+                                            "color": "#aaaaaa",
+                                            "size": "xs",
+                                            "align": "end"
+                                        }
+                                        ]
+                                    }
+                                    ]
+                                },
+                                "styles": {
+                                    "footer": {
+                                    "separator": true
+                                    }
+                                }
+                                }
+                            """
+                        await sendFlex(event, 'hello', bubble_string)
+
+                except sqlite3.Error as e:
+                    print(e)
+                
+                
+
     return 'OK'
 
 #functions 
@@ -82,6 +180,15 @@ async def sendText(event, text):
             messages=[TextMessage(text=text)]
         )
     )
+
+async def sendFlex(event, alt_text, bubble_string):
+    message = FlexMessage(alt_text=alt_text, contents= FlexContainer.from_json(bubble_string))
+    await line_bot_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=event.reply_token,
+                messages=[message]
+            )
+        )
 
 #backend api
 @app.post("/register")
