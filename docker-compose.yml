@@ -10,7 +10,8 @@ services:
       DEBUG: "false"
       LINE_CHANNEL_SECRET: "ed2085ce77d345185e12a2ee4cf0e291"
       LINE_CHANNEL_TOKEN: "5zASdsBPT94JX62Vf+HNlBHp27RTweuE3TqTdbka/+C9b9+vZJ4uQmIXhPl1INIckvY94e1mAkwQtVBL5cee2XFPGQfDKrwK7Y345ZHw6TGnJej+w4mlqWthp0oP5PbBSoDfHK9srVBTe+t8mOsWggdB04t89/1O/w1cDnyilFU="
-      HOST_URL: "https://liff.line.me/1654109634-mOJGk7bV"
+      HOST_LIFF: "https://liff.line.me/1654109634-mOJGk7bV"
+      HOST_URL: "https://9086-1-46-203-66.ngrok-free.app"
     ports:
       - "8000:8000"
     volumes:

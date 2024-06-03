@@ -7,7 +7,9 @@ from datetime import datetime
 import pytz 
 import zeep
 
-from fastapi import Request, FastAPI, HTTPException
+from fastapi import Request, FastAPI, HTTPException, URLRequest
+from fastapi.responses import FileResponse
+
 from fastapi.staticfiles import StaticFiles
 from linebot.v3.webhook import WebhookParser
 from linebot.v3.messaging import (
@@ -24,6 +26,7 @@ from linebot.v3.webhooks import (
 channel_secret = os.getenv('LINE_CHANNEL_SECRET', None)
 channel_access_token = os.getenv('LINE_CHANNEL_TOKEN', None)
 host_url = os.getenv('HOST_URL', None)
+host_liff =  os.getenv('HOST_LIFF', None)
 
 if channel_secret is None:
     print('Specify LINE_CHANNEL_SECRET as environment variable.')
@@ -44,6 +47,10 @@ parser = WebhookParser(channel_secret)
 database = "database.db"
 
 app.mount("/liff", StaticFiles(directory="liff", html = True), name="liff")
+@app.get("/view")
+async def viewpdf(url_request: URLRequest):
+    PDF_PATH = 'documents/test/123.PDF'
+    return FileResponse(PDF_PATH, media_type='application/pdf')
 
 @app.post("/webhook")
 async def handle_callback(request: Request):
@@ -66,7 +73,7 @@ async def handle_callback(request: Request):
         
         if event.message.type == 'text':
             if event.message.text == 'register':
-                url= host_url + '/liff'
+                url = host_liff + '/liff'
                 await sendText(event, url) 
             elif event.message.text == '!menu':
                 await sendText(event, 'menu menu') 
@@ -118,7 +125,7 @@ async def handle_callback(request: Request):
                         rows = cur.fetchall()
                         for row in rows:
                             print(row[1])
-                            linkPdfUrl = 'https://www.google.com'
+                            linkPdfUrl = host_url+'/view?id='+str(row[0])
                             results.append('{"type": "text","text": "'+row[1]+'","size": "md","color": "#555555","flex": 0, "action": { "type": "uri", "label": "action", "uri": "' + linkPdfUrl + '"}}')
 
                         bubble_string += ','.join(results)
@@ -163,7 +170,7 @@ async def handle_callback(request: Request):
                                 }
                                 }
                             """
-                        await sendFlex(event, 'hello', bubble_string)
+                        await sendFlex(event, 'results', bubble_string)
 
                 except sqlite3.Error as e:
                     print(e)
